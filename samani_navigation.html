@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مسیریابی | سامانی</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F5EFE0;
+    --gold: #C49A2B;
+    --teal: #1B4A3F;
+    --teal-lt: #2A6B5C;
+    --ink: #0D2B25;
+    --muted: #7A9E96;
+  }
+  body {
+    font-family: 'Vazirmatn', sans-serif;
+    background: var(--ink);
+    color: var(--cream);
+    min-height: 100vh;
+  }
+
+  .header {
+    background: var(--teal);
+    padding: 18px 20px;
+    border-bottom: 2px solid var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .back-btn {
+    background: none; border: none; color: var(--gold);
+    font-size: 1.3rem; cursor: pointer; padding: 4px 8px;
+    display: none;
+  }
+  .back-btn.show { display: block; }
+  .header-title { font-size: 1rem; font-weight: 700; color: var(--cream); }
+  .header-sub { font-size: .7rem; color: var(--muted); }
+
+  .page { max-width: 480px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* ── Question ── */
+  #screen-question { padding-top: 40px; }
+  .q-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+  .q-sub { font-size: .82rem; color: var(--muted); margin-bottom: 32px; line-height: 1.7; }
+
+  .choice-btn {
+    display: flex; align-items: center; gap: 16px;
+    width: 100%; padding: 20px 22px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(196,154,43,.2);
+    border-radius: 16px; margin-bottom: 12px;
+    cursor: pointer; color: var(--cream);
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: .95rem; font-weight: 600;
+    text-align: right;
+    transition: all .2s;
+  }
+  .choice-btn:hover, .choice-btn:active {
+    border-color: var(--gold);
+    background: rgba(196,154,43,.1);
+    transform: translateX(-3px);
+  }
+  .choice-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: rgba(196,154,43,.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .choice-meta { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+  .choice-name { font-size: .95rem; font-weight: 700; }
+  .choice-hint { font-size: .73rem; color: var(--muted); font-weight: 400; }
+  .choice-arrow { margin-right: auto; color: var(--gold); font-size: 1rem; }
+
+  /* ── Progress ── */
+  .prog-wrap { padding: 20px 0 4px; }
+  .prog-track { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; }
+  .prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #E2BF6A);
+    border-radius: 2px; width: 5%;
+    transition: width .5s ease;
+  }
+  .prog-text { font-size: .7rem; color: var(--muted); margin-top: 6px; }
+
+  /* ── Steps ── */
+  #screen-steps { display: none; padding-top: 8px; }
+
+  .step {
+    position: relative;
+    opacity: .3;
+    transition: opacity .4s;
+    padding-bottom: 24px;
+  }
+  .step.active { opacity: 1; }
+  .step.done { opacity: .55; }
+
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 23px; top: 50px;
+    width: 2px;
+    height: calc(100% - 14px);
+    background: linear-gradient(180deg, var(--gold), transparent);
+  }
+  .step.done:not(:last-child)::after { background: var(--gold); }
+
+  .step-row { display: flex; gap: 14px; }
+
+  .step-icon {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 2px solid var(--gold);
+    background: rgba(196,154,43,.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; flex-shrink: 0;
+    position: relative; z-index: 1;
+    transition: all .3s;
+  }
+  .step.active .step-icon {
+    background: var(--gold);
+    animation: glow 2s infinite;
+  }
+  .step.done .step-icon { background: var(--teal); border-color: var(--teal); }
+  @keyframes glow {
+    0%,100% { box-shadow: 0 0 16px rgba(196,154,43,.35); }
+    50% { box-shadow: 0 0 28px rgba(196,154,43,.65); }
+  }
+
+  .step-body { flex: 1; }
+  .step-num { font-size: .62rem; letter-spacing: .18em; color: var(--gold); margin-bottom: 3px; }
+  .step-title { font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+  .step-desc { font-size: .8rem; color: var(--muted); line-height: 1.7; margin-bottom: 12px; }
+
+  .map-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .map-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 14px; border-radius: 50px;
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: .78rem; font-weight: 600;
+    text-decoration: none; color: white;
+    transition: transform .15s;
+  }
+  .map-btn:hover { transform: translateY(-2px); }
+  .btn-google { background: #4285F4; }
+  .btn-neshan { background: #E84040; }
+  .btn-balad  { background: #F5A623; color: #222; }
+
+  .done-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border-radius: 50px;
+    background: var(--teal); border: 1px solid var(--gold);
+    color: var(--cream); font-family: 'Vazirmatn', sans-serif;
+    font-size: .83rem; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .done-btn:hover { background: var(--teal-lt); }
+
+  .info-card {
+    border-radius: 14px; padding: 14px; margin-bottom: 12px;
+    border: 1px solid rgba(196,154,43,.25);
+    background: rgba(196,154,43,.07);
+  }
+  .info-card.metro-style {
+    background: rgba(232,64,64,.07);
+    border-color: rgba(232,64,64,.25);
+  }
+  .info-card.taxi-style {
+    background: rgba(245,166,35,.07);
+    border-color: rgba(245,166,35,.25);
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: .72rem; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .badge-red { background: #E84040; color: white; }
+  .badge-yellow { background: #F5A623; color: #222; }
+  .badge-green { background: var(--teal); color: var(--cream); border: 1px solid var(--gold); }
+
+  .info-row {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: .84rem; line-height: 1.7; margin-bottom: 3px;
+  }
+  .info-row:last-child { margin-bottom: 0; }
+
+  /* ── Finish ── */
+  #screen-finish {
+    display: none; padding-top: 60px;
+    text-align: center;
+  }
+  .finish-emoji { font-size: 4rem; margin-bottom: 16px; }
+  .finish-title { font-size: 1.5rem; font-weight: 800; color: var(--gold); margin-bottom: 10px; }
+  .finish-sub { font-size: .85rem; color: var(--muted); line-height: 1.9; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="back-btn" id="backBtn" onclick="goBack()">←</button>
+  <div>
+    <div class="header-title">SAMANI · مسیریابی هوشمند</div>
+    <div class="header-sub" id="headerSub">بهترین مسیر رو پیدا کن</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ══ QUESTION ══ -->
+  <div id="screen-question">
+    <div style="padding-top:40px">
+      <div class="q-title">با چه وسیله‌ای میای؟ 🗺️</div>
+      <div class="q-sub">بر اساس انتخابت، قدم به قدم راهنماییت میکنم.</div>
+
+      <button class="choice-btn" onclick="startMode('car')">
+        <div class="choice-icon">🚗</div>
+        <div class="choice-meta">
+          <span class="choice-name">با ماشین</span>
+          <span class="choice-hint">پارکینگ میدان + پیاده تا مغازه</span>
+        </div>
+        <span class="choice-arrow">←</span>
+      </button>
+
+      <button class="choice-btn" onclick="startMode('walk')">
+        <div class="choice-icon">🚶</div>
+        <div class="choice-meta">
+          <span class="choice-name">پیاده</span>
+          <span class="choice-hint">مستقیم لوکیشن مغازه</span>
+        </div>
+        <span class="choice-arrow">←</span>
+      </button>
+
+      <button class="choice-btn" onclick="startMode('metro')">
+        <div class="choice-icon">🚇</div>
+        <div class="choice-meta">
+          <span class="choice-name">با مترو</span>
+          <span class="choice-hint">ایستگاه شهر ری + تاکسی + پیاده</span>
+        </div>
+        <span class="choice-arrow">←</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ STEPS ══ -->
+  <div id="screen-steps">
+    <div class="prog-wrap">
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-text" id="progText"></div>
+    </div>
+    <div id="steps-container"></div>
+  </div>
+
+  <!-- ══ FINISH ══ -->
+  <div id="screen-finish">
+    <div class="finish-emoji">🎉</div>
+    <div class="finish-title">خوش اومدی!</div>
+    <div class="finish-sub">
+      سامانی · پاساژ قائم · پلاک ۲۸<br>
+      ☎️ ۰۲۱–۵۵۹۵۰۶۹۰<br>
+      منتظرتیم 😊
+    </div>
+  </div>
+
+</div>
+
+<script>
+const LINKS = {
+  parking: {
+    google: 'https://maps.app.goo.gl/SvmDVgrsjhUg8Zv18',
+    balad:  'https://balad.ir/location?latitude=35.590763&longitude=51.437120&zoom=16.500000',
+    neshan: 'https://nshn.ir/sbQqTV2xuX8t'
+  },
+  shop: {
+    google: 'https://maps.app.goo.gl/58Y16Aa9rbEdathp7',
+    balad:  'https://balad.ir/location?latitude=35.588795&longitude=51.437376&zoom=16.500000',
+    neshan: 'https://nshn.ir/4cvbQqAuWxuXV3'
+  }
+};
+
+const modes = {
+  car: [
+    {
+      icon: '🅿️',
+      num: 'مرحله اول',
+      title: 'پارک کن در پارکینگ میدان شهرری',
+      desc: 'خیابان حرم برای ماشین بسته‌ست. پارکینگ میدان شهرری نزدیک‌ترین جاست.',
+      btns: [
+        { label: 'گوگل مپ', cls: 'btn-google', href: LINKS.parking.google },
+        { label: 'بلد', cls: 'btn-balad', href: LINKS.parking.balad },
+        { label: 'نشان', cls: 'btn-neshan', href: LINKS.parking.neshan },
+      ],
+      done: '✅ پارک کردم'
+    },
+    {
+      icon: '🚶',
+      num: 'مرحله دوم',
+      title: 'پیاده بیا تا پاساژ قائم',
+      desc: 'از پارکینگ به سمت خیابان حرم بیا. پاساژ قائم پلاک ۲۸.',
+      btns: [
+        { label: 'مسیر پیاده — گوگل', cls: 'btn-google', href: LINKS.shop.google },
+        { label: 'بلد', cls: 'btn-balad', href: LINKS.shop.balad },
+        { label: 'نشان', cls: 'btn-neshan', href: LINKS.shop.neshan },
+      ],
+      done: '✅ رسیدم به پاساژ'
+    },
+    {
+      icon: '🏪', num: 'مرحله سوم',
+      title: 'رسیدی!', desc: '', arrival: true, done: '🎉 رسیدم!'
+    }
+  ],
+  walk: [
+    {
+      icon: '🗺️', num: 'مرحله اول',
+      title: 'مستقیم بیا به مغازه',
+      desc: 'لوکیشن مغازه رو در نقشه مورد علاقه‌ات باز کن:',
+      btns: [
+        { label: 'گوگل مپ', cls: 'btn-google', href: LINKS.shop.google },
+        { label: 'بلد', cls: 'btn-balad', href: LINKS.shop.balad },
+        { label: 'نشان', cls: 'btn-neshan', href: LINKS.shop.neshan },
+      ],
+      done: '✅ در راهم'
+    },
+    {
+      icon: '🏪', num: 'مرحله دوم',
+      title: 'رسیدی!', desc: '', arrival: true, done: '🎉 رسیدم!'
+    }
+  ],
+  metro: [
+    {
+      icon: '🚇', num: 'مرحله اول',
+      title: 'پیاده شو ایستگاه شهر ری',
+      desc: 'سوار خط ۱ (قرمز) بشو و در ایستگاه شهر ری پیاده شو.',
+      metroCard: true,
+      btns: [], done: '✅ پیاده شدم'
+    },
+    {
+      icon: '🚕', num: 'مرحله دوم',
+      title: 'تاکسی بگیر تا میدان شهرری',
+      desc: 'از جلوی ایستگاه تاکسی بگیر و بگو «میدان شهرری».',
+      taxiCard: true,
+      btns: [], done: '✅ رسیدم به میدان'
+    },
+    {
+      icon: '🚶', num: 'مرحله سوم',
+      title: 'پیاده بیا تا پاساژ قائم',
+      desc: 'از میدان شهرری به سمت خیابان حرم بیا. پاساژ قائم پلاک ۲۸.',
+      btns: [
+        { label: 'مسیر پیاده — گوگل', cls: 'btn-google', href: LINKS.shop.google },
+        { label: 'بلد', cls: 'btn-balad', href: LINKS.shop.balad },
+        { label: 'نشان', cls: 'btn-neshan', href: LINKS.shop.neshan },
+      ],
+      done: '✅ رسیدم به پاساژ'
+    },
+    {
+      icon: '🏪', num: 'مرحله چهارم',
+      title: 'رسیدی!', desc: '', arrival: true, done: '🎉 رسیدم!'
+    }
+  ]
+};
+
+let currentMode = null;
+
+function startMode(mode) {
+  currentMode = mode;
+  document.getElementById('screen-question').style.display = 'none';
+  document.getElementById('screen-steps').style.display = 'block';
+  document.getElementById('backBtn').classList.add('show');
+  renderSteps();
+  updateProgress(0);
+}
+
+function renderSteps() {
+  const steps = modes[currentMode];
+  const c = document.getElementById('steps-container');
+  c.innerHTML = '';
+
+  steps.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'step' + (i === 0 ? ' active' : '');
+    div.id = 'step-' + i;
+
+    // extra card
+    let extra = '';
+    if (s.arrival) {
+      extra = `<div class="info-card">
+        <div class="badge badge-green">🏪 سامانی</div>
+        <div class="info-row">🏬 پاساژ قائم، پلاک ۲۸</div>
+        <div class="info-row">☎️ ۰۲۱–۵۵۹۵۰۶۹۰</div>
+        <div class="info-row">⏰ شنبه تا پنج‌شنبه · ۱۱:۰۰ تا ۲۰:۳۰</div>
+      </div>`;
+    }
+    if (s.metroCard) {
+      extra = `<div class="info-card metro-style">
+        <div class="badge badge-red">🚇 خط ۱ · قرمز</div>
+        <div class="info-row">🚉 ایستگاه: شهر ری</div>
+        <div class="info-row">⏱️ بعد از پیاده شدن تاکسی بگیر</div>
+      </div>`;
+    }
+    if (s.taxiCard) {
+      extra = `<div class="info-card taxi-style">
+        <div class="badge badge-yellow">🚕 تاکسی</div>
+        <div class="info-row">🗣️ بگو: «میدان شهرری»</div>
+        <div class="info-row">⏱️ حدود ۵ دقیقه</div>
+      </div>`;
+    }
+
+    // map buttons
+    let btnsHtml = '';
+    if (s.btns && s.btns.length) {
+      btnsHtml = '<div class="map-btns">' +
+        s.btns.map(b => `<a class="map-btn ${b.cls}" href="${b.href}" target="_blank">🗺️ ${b.label}</a>`).join('') +
+        '</div>';
+    }
+
+    div.innerHTML = `<div class="step-row">
+      <div class="step-icon">${s.icon}</div>
+      <div class="step-body">
+        <div class="step-num">${s.num}</div>
+        <div class="step-title">${s.title}</div>
+        ${s.desc ? `<div class="step-desc">${s.desc}</div>` : ''}
+        ${extra}
+        ${btnsHtml}
+        <button class="done-btn" onclick="nextStep(${i})">${s.done}</button>
+      </div>
+    </div>`;
+    c.appendChild(div);
+  });
+}
+
+function nextStep(i) {
+  const total = modes[currentMode].length;
+  document.getElementById('step-' + i).classList.remove('active');
+  document.getElementById('step-' + i).classList.add('done');
+
+  if (i + 1 < total) {
+    const next = document.getElementById('step-' + (i+1));
+    next.classList.add('active');
+    next.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    updateProgress(i + 1);
+  } else {
+    document.getElementById('screen-steps').style.display = 'none';
+    document.getElementById('screen-finish').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function updateProgress(step) {
+  const total = modes[currentMode].length;
+  const pct = Math.round(((step + 1) / total) * 100);
+  document.getElementById('progFill').style.width = pct + '%';
+  const farsi = n => n.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+  document.getElementById('progText').textContent = `مرحله ${farsi(step+1)} از ${farsi(total)}`;
+}
+
+function goBack() {
+  document.getElementById('screen-steps').style.display = 'none';
+  document.getElementById('screen-finish').style.display = 'none';
+  document.getElementById('screen-question').style.display = 'block';
+  document.getElementById('backBtn').classList.remove('show');
+}
+</script>
+</body>
+</html>
